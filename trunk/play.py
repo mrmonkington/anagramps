@@ -42,13 +42,13 @@ class Tile( clutter.Group ):
 		self.set_opacity( 0xff )
 
 		# random wobble
-		self.set_rotation(
-			axis = clutter.Z_AXIS,
-			angle = random.gauss( 0, 4 ),
-			x = 0,
-			y = 3,
-			z = 0
-		)
+		#self.set_rotation(
+		#	axis = clutter.Z_AXIS,
+		#	angle = random.gauss( 0, 4 ),
+		#	x = 0,
+		#	y = 3,
+		#	z = 0
+		#)
 		
 
 class Rack( clutter.Group ):
@@ -134,16 +134,21 @@ class AnagrampsClutter():
 		self.game_state = "play"
 
 	def dict_lookup( self, word ):
-		if self.dict.has_key( word ):
+		if word in self.dict:
 			return True
 		return False
 
 	def on_submit( self, stage, event ):
-		if self.game[ self.step ] == self.rack.letters or self.dict_lookup( self.rack.letters ):
+		if self.game[ self.step ] == self.rack.letters:
 			print "yay"
 			self.correct()
+		elif self.dict_lookup( self.rack.letters ):
+			print "not what I was thinking, which was %s, but no biggie" % self.game[ self.step ]
+			# make this the step
+			self.game[ self.step ] = self.rack.letters
+			self.correct()
 		else:
-			print "nope"
+			print "incorrect"
 
 
 	def init_rack( self, letters ):
@@ -196,7 +201,8 @@ class AnagrampsClutter():
 		self.stage.set_reactive( True )
 		self.stage.set_title( "Anagramps!" )
 
-		game = random.sample( ramps, 1 )[ 0 ][ -1 : : -1 ]
+		#game = random.sample( ramps, 1 )[ 0 ][ -1 : : -1 ]
+		game = ramps[ int( sys.argv[ 1 ] ) ][ -1 : : -1 ]
 		self.dict = dict
 		self.play( game )
 
