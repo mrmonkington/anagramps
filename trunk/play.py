@@ -4,16 +4,16 @@ import pickle
 import random
 
 import clutter
-#import gtk
+import gtk
 import math
 
+
 tile_size = 32 
-tile_margin = 5
-screen_margin = 50
+tile_margin = 2
+screen_margin = 45
 screen_width = 360
 screen_height = 480
 rack_y = 360
-
 
 class Tile( clutter.Group ):
 	def __init__( self, letter, pos ):
@@ -25,7 +25,17 @@ class Tile( clutter.Group ):
 		self.bg = clutter.Texture()
 		self.bg.set_width( tile_size )
 		self.bg.set_height( tile_size )
-		self.bg.set_from_file( "tile_down.png" )
+		#self.bg.set_from_file( "tile_down.png" )
+		pixbuf = gtk.gdk.pixbuf_new_from_file( "tile_down.png" )
+		self.bg.set_from_rgb_data(
+			pixbuf.get_pixels(),
+			pixbuf.props.has_alpha,
+			pixbuf.props.width,
+			pixbuf.props.height,
+			pixbuf.props.rowstride,
+			pixbuf.props.n_channels,
+			0
+		)
 		#self.bg.set_opacity( 50 )
 		#self.bg.set_color( clutter.Color( 0xff, 0xfd, 0xf9, 0xff ) )
 		self.add( self.bg )
@@ -61,6 +71,12 @@ class Rack( clutter.Group ):
 		slot = 0
 		self.cap_x = 0
 		self.cap_y = 0
+
+		self.timeline = clutter.Timeline( fps = 60, duration = 200 )
+		self.timeline.set_loop( False )
+		#self.alpha = clutter.Alpha( self.timeline, clutter.smoothstep_inc_func )
+		self.tile_fx_tp = clutter.EffectTemplate( self.timeline, clutter.smoothstep_inc_func )
+
 		for l in letters:
 			t = Tile( l, slot )
 			self.tiles.append( t )
@@ -99,7 +115,8 @@ class Rack( clutter.Group ):
 		self.drag_res = self.get_stage().connect( 'motion-event', self.on_dragrack )
 		self.mouseup_res = self.get_stage().connect( 'button-release-event', self.on_mouseup )
 
-		self.raise_top()
+		self.cap_tile.raise_top()
+		self.cap_tile.set_scale( 1.2, 1.2 )
 
 	def on_mouseup( self, stage, event ):
 		print "up "
@@ -110,10 +127,15 @@ class Rack( clutter.Group ):
 		self.tiles.sort( cmp = lambda a, b: a.get_x() - b.get_x() )
 		slot = 0
 		for t in self.tiles:
-			t.set_position( slot * ( tile_size + tile_margin ) , rack_y )
+			if t == self.cap_tile:
+				print "cap"
+				t.set_position( slot * ( tile_size + tile_margin ), rack_y )
+			else:
+				clutter.effect_move( self.tile_fx_tp, t,  slot * ( tile_size + tile_margin ), rack_y )
 			slot += 1
 
 		self.letters = "".join( [ l.letter for l in self.tiles ] )
+		self.cap_tile.set_scale( 1.0, 1.0 )
 		print "new order: %s" % self.letters
 
 	def on_dragrack( self, stage, event ):
