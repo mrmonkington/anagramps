@@ -4,10 +4,10 @@ import pickle
 import random
 
 import clutter
-import gtk
+#import gtk
 import math
 
-tile_size = 28 
+tile_size = 32 
 tile_margin = 5
 screen_margin = 50
 screen_width = 360
@@ -22,10 +22,12 @@ class Tile( clutter.Group ):
 		self.pos = pos
 		self.set_width( tile_size )
 		self.set_height( tile_size )
-		self.bg = clutter.Rectangle()
+		self.bg = clutter.Texture()
 		self.bg.set_width( tile_size )
 		self.bg.set_height( tile_size )
-		self.bg.set_color( clutter.Color( 0xff, 0xfd, 0xf9, 0xff ) )
+		self.bg.set_from_file( "tile_down.png" )
+		#self.bg.set_opacity( 50 )
+		#self.bg.set_color( clutter.Color( 0xff, 0xfd, 0xf9, 0xff ) )
 		self.add( self.bg )
 		self.bg.show()
 		self.label = clutter.Label()
@@ -42,13 +44,13 @@ class Tile( clutter.Group ):
 		self.set_opacity( 0xff )
 
 		# random wobble
-		#self.set_rotation(
-		#	axis = clutter.Z_AXIS,
-		#	angle = random.gauss( 0, 4 ),
-		#	x = 0,
-		#	y = 3,
-		#	z = 0
-		#)
+		self.set_rotation(
+			axis = clutter.Z_AXIS,
+			angle = random.gauss( 0, 4 ),
+			x = 0,
+			y = 3,
+			z = 60
+		)
 		
 
 class Rack( clutter.Group ):
@@ -83,19 +85,28 @@ class Rack( clutter.Group ):
 
 		self.show_all()
 		self.drag_res = 0
+		self.mouseup_res = 0
 
 	def on_mousedown( self, stage, event ):
-		#print "down %s" % event.source.__class__
+		print "down"
 		self.cap_x = event.x
 		self.cap_y = event.y
 		self.cap_tile = event.source
-		self.drag_res = clutter.Stage().connect( 'motion-event', self.on_dragrack )
-		self.mouseup_res = clutter.Stage().connect( 'button-release-event', self.on_mouseup )
+		if self.drag_res:
+			self.get_stage().disconnect( self.drag_res )
+		if self.mouseup_res:
+			self.get_stage().disconnect( self.mouseup_res )
+		self.drag_res = self.get_stage().connect( 'motion-event', self.on_dragrack )
+		self.mouseup_res = self.get_stage().connect( 'button-release-event', self.on_mouseup )
+
+		self.raise_top()
 
 	def on_mouseup( self, stage, event ):
-		#print "up %s" % event.source.__class__
-		stage.disconnect( self.drag_res )
-		stage.disconnect( self.mouseup_res )
+		print "up "
+		self.get_stage().disconnect( self.drag_res )
+		self.get_stage().disconnect( self.mouseup_res )
+		self.drag_res = 0
+		self.mouseup_res = 0
 		self.tiles.sort( cmp = lambda a, b: a.get_x() - b.get_x() )
 		slot = 0
 		for t in self.tiles:
@@ -106,7 +117,7 @@ class Rack( clutter.Group ):
 		print "new order: %s" % self.letters
 
 	def on_dragrack( self, stage, event ):
-		#print "drag %i %i" % ( event.x, event.y )
+		print "drag %i %i" % ( event.x, event.y )
 		self.cap_tile.set_x( event.x - self.get_x() )
 
 class SubmitButton( clutter.Group ):
@@ -201,8 +212,14 @@ class AnagrampsClutter():
 		self.stage.set_reactive( True )
 		self.stage.set_title( "Anagramps!" )
 
+		bg = clutter.Texture()
+		bg.set_from_file( "table.png" )
+		bg.set_position( 0, 0 )
+		self.stage.add( bg )
+
 		#game = random.sample( ramps, 1 )[ 0 ][ -1 : : -1 ]
 		game = ramps[ int( sys.argv[ 1 ] ) ][ -1 : : -1 ]
+		#print game
 		self.dict = dict
 		self.play( game )
 
