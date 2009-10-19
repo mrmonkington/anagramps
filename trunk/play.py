@@ -3,7 +3,9 @@ import re
 import pickle
 import random
 
+import cluttergtk
 import clutter
+import gtk
 import gtk
 import math
 
@@ -40,14 +42,14 @@ class Tile( clutter.Group ):
 		#self.bg.set_color( clutter.Color( 0xff, 0xfd, 0xf9, 0xff ) )
 		self.add( self.bg )
 		self.bg.show()
-		self.label = clutter.Label()
+		self.label = clutter.Text()
 		self.label.set_font_name( "sans bold 23px" )
 		self.label.set_text( letter )
 		self.label.set_color( clutter.Color( 0x50, 0x20, 0x10, 0xff ) )
-		self.label.set_position( int( tile_size / 2 ), int( tile_size / 2 ) )
-		self.label.set_anchor_point_from_gravity( clutter.GRAVITY_CENTER )
 		self.label.set_width( tile_size )
 		self.label.set_height( tile_size )
+		self.label.set_anchor_point_from_gravity( clutter.GRAVITY_CENTER )
+		self.label.set_position( int( tile_size / 2 ), int( tile_size / 2 ) )
 		self.add( self.label )
 		self.label.show()
 
@@ -73,10 +75,12 @@ class Rack( clutter.Group ):
 		self.cap_x = 0
 		self.cap_y = 0
 
-		self.timeline = clutter.Timeline( fps = 60, duration = 200 )
-		self.timeline.set_loop( False )
+		#self.timeline = clutter.Timeline( fps = 60, duration = 200 )
+		#fps removed from API	
+		#self.timeline = clutter.Timeline( duration = 200 )
+		#self.timeline.set_loop( False )
 		#self.alpha = clutter.Alpha( self.timeline, clutter.smoothstep_inc_func )
-		self.tile_fx_tp = clutter.EffectTemplate( self.timeline, clutter.smoothstep_inc_func )
+		#self.tile_fx_tp = clutter.EffectTemplate( self.timeline, clutter.smoothstep_inc_func )
 
 		for l in letters:
 			t = Tile( l, slot )
@@ -125,14 +129,15 @@ class Rack( clutter.Group ):
 		self.get_stage().disconnect( self.mouseup_res )
 		self.drag_res = 0
 		self.mouseup_res = 0
-		self.tiles.sort( cmp = lambda a, b: a.get_x() - b.get_x() )
+		self.tiles.sort( cmp = lambda a, b: int( a.get_x() - b.get_x() ) )
 		slot = 0
 		for t in self.tiles:
 			if t == self.cap_tile:
 				print "cap"
 				t.set_position( slot * ( tile_size + tile_margin ), rack_y )
 			else:
-				clutter.effect_move( self.tile_fx_tp, t,  slot * ( tile_size + tile_margin ), rack_y )
+				#clutter.effect_move( self.tile_fx_tp, t, slot * ( tile_size + tile_margin ), rack_y )
+				t.animate( clutter.EASE_IN_OUT_BACK, 400, 'x', slot * ( tile_size + tile_margin ), 'y', rack_y )
 			slot += 1
 
 		self.letters = "".join( [ l.letter for l in self.tiles ] )
@@ -151,7 +156,7 @@ class SubmitButton( clutter.Group ):
 		self.submit.set_size( 5 * tile_size, tile_size )
 		self.submit.set_color( clutter.Color( 0x20, 0xd0, 0x30, 0xff ) )
 		self.add( self.submit )
-		self.label = clutter.Label()
+		self.label = clutter.Text()
 		self.label.set_font_name( "sans bold 15px" )
 		self.label.set_text( "Try word..." )
 		self.label.set_color( clutter.Color( 0x00, 0x20, 0x05, 0xff ) )
@@ -229,9 +234,20 @@ class AnagrampsClutter():
 		self.stage.show_all()
 
 	def run( self, args, ramps, dict ):
-		self.stage = clutter.Stage()
+
+		window = gtk.Window()
+		window.connect('destroy', gtk.main_quit)
+		window.set_title('cluttergtk.Embed')
+		vbox = gtk.VBox(False, 6)
+		window.add(vbox)
+		embed = cluttergtk.Embed()
+		vbox.pack_start(embed, True, True, 0)
+		embed.set_size_request( screen_width, screen_height )
+		embed.realize()
+		#self.stage = clutter.Stage()
+		self.stage = embed.get_stage()
 		self.stage.set_color(clutter.Color( 0x20, 0x20, 0x20, 0xff ) )
-		self.stage.set_size( screen_width, screen_height )
+		#self.stage.set_size( screen_width, screen_height )
 		self.stage.set_reactive( True )
 		self.stage.set_title( "Anagramps!" )
 
@@ -240,8 +256,8 @@ class AnagrampsClutter():
 		bg.set_position( 0, 0 )
 		self.stage.add( bg )
 
-		#game = random.sample( ramps, 1 )[ 0 ][ -1 : : -1 ]
-		game = ramps[ int( sys.argv[ 1 ] ) ][ -1 : : -1 ]
+		game = random.sample( ramps, 1 )[ 0 ][ -1 : : -1 ]
+		#game = ramps[ int( sys.argv[ 1 ] ) ][ -1 : : -1 ]
 		#print game
 		self.dict = dict
 		self.play( game )
@@ -249,7 +265,10 @@ class AnagrampsClutter():
 		self.stage.show_all()
 		#timeline.start()
 		clutter.threads_init()
-		clutter.main()
+
+		window.show_all()
+		#clutter.main()
+		gtk.main()
 
 		return 0
 
