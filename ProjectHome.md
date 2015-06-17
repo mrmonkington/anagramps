@@ -1,0 +1,1 @@
+Solve a three letter anagram.  The game adds a letter, so now you have to solve a 4 letter anagram.  It adds another letter, and so on until you're solving a 9 letter anagram.  Sounds unremarkable, but having to re-configure your brain to ignore the words you've already solved is quite tricky!
